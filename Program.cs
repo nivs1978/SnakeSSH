@@ -68,7 +68,9 @@ static async Task RunUi(List<Connection> connections, string connectionsPath)
                     {
                         Console.BackgroundColor = ConsoleColor.Black;
                         Console.Clear();
+                        var modalRedraw = UiState.ActiveModalRedraw;
                         DrawMainWindow(filteredConnections, searchBox, listBox, rectWidth, rectHeight);
+                        modalRedraw?.Invoke();
                     }
                 }
             }
@@ -330,7 +332,20 @@ static async Task EditConnection(Connection? connection, List<Connection> connec
     var focusIndex = 0;
     textboxes[focusIndex].SetFocus(true);
 
-    DrawEditWindow(left, top, windowWidth, windowHeight, labelWidth, textboxes);
+    void RedrawEdit()
+    {
+        var currentLeft = Math.Max(0, (Console.WindowWidth - windowWidth) / 2);
+        var currentTop = Math.Max(0, (Console.WindowHeight - windowHeight) / 2);
+
+        textboxes[0].SetPosition(currentLeft + 2 + labelWidth, currentTop + 2);
+        textboxes[1].SetPosition(currentLeft + 2 + labelWidth, currentTop + 4);
+        textboxes[2].SetPosition(currentLeft + 2 + labelWidth, currentTop + 6);
+
+        DrawEditWindow(currentLeft, currentTop, windowWidth, windowHeight, labelWidth, textboxes);
+    }
+
+    UiState.ActiveModalRedraw = RedrawEdit;
+    RedrawEdit();
 
     while (true)
     {
@@ -401,6 +416,7 @@ static async Task EditConnection(Connection? connection, List<Connection> connec
         }
     }
 
+    UiState.ActiveModalRedraw = null;
     Console.CursorVisible = false;
 }
 
@@ -500,35 +516,42 @@ static bool PromptYesNo(string prompt)
     var saveFg = Console.ForegroundColor;
     var saveCursorVisible = Console.CursorVisible;
 
-    var boxWidth = Math.Min(Console.WindowWidth, Math.Max(prompt.Length + 4, 20));
-    var boxHeight = 5;
-    var left = Math.Max(0, (Console.WindowWidth - boxWidth) / 2);
-    var top = Math.Max(0, (Console.WindowHeight - boxHeight) / 2);
-
-    Console.BackgroundColor = ConsoleColor.Red;
-    Console.ForegroundColor = ConsoleColor.White;
-    Console.CursorVisible = false;
-
-    Console.SetCursorPosition(left, top);
-    Console.Write("┌" + new string('─', boxWidth - 2) + "┐");
-
-    for (var row = 1; row < boxHeight - 1; row++)
+    void RedrawPrompt()
     {
-        Console.SetCursorPosition(left, top + row);
-        Console.Write('│');
-        Console.Write(new string(' ', boxWidth - 2));
-        Console.Write('│');
+        var redrawBoxWidth = Math.Min(Console.WindowWidth, Math.Max(prompt.Length + 4, 20));
+        var redrawBoxHeight = 5;
+        var redrawLeft = Math.Max(0, (Console.WindowWidth - redrawBoxWidth) / 2);
+        var redrawTop = Math.Max(0, (Console.WindowHeight - redrawBoxHeight) / 2);
+
+        Console.BackgroundColor = ConsoleColor.Red;
+        Console.ForegroundColor = ConsoleColor.White;
+        Console.CursorVisible = false;
+
+        Console.SetCursorPosition(redrawLeft, redrawTop);
+        Console.Write("┌" + new string('─', redrawBoxWidth - 2) + "┐");
+
+        for (var row = 1; row < redrawBoxHeight - 1; row++)
+        {
+            Console.SetCursorPosition(redrawLeft, redrawTop + row);
+            Console.Write('│');
+            Console.Write(new string(' ', redrawBoxWidth - 2));
+            Console.Write('│');
+        }
+
+        Console.SetCursorPosition(redrawLeft, redrawTop + redrawBoxHeight - 1);
+        Console.Write("└" + new string('─', redrawBoxWidth - 2) + "┘");
+
+        var textLeft = redrawLeft + Math.Max(0, (redrawBoxWidth - prompt.Length) / 2);
+        Console.SetCursorPosition(textLeft, redrawTop + 2);
+        Console.Write(prompt);
     }
 
-    Console.SetCursorPosition(left, top + boxHeight - 1);
-    Console.Write("└" + new string('─', boxWidth - 2) + "┘");
-
-    var textLeft = left + Math.Max(0, (boxWidth - prompt.Length) / 2);
-    Console.SetCursorPosition(textLeft, top + 2);
-    Console.Write(prompt);
+    UiState.ActiveModalRedraw = RedrawPrompt;
+    RedrawPrompt();
 
     var key = Console.ReadKey(true);
 
+    UiState.ActiveModalRedraw = null;
     Console.SetCursorPosition(saveLeft, saveTop);
     Console.BackgroundColor = saveBg;
     Console.ForegroundColor = saveFg;
@@ -788,3 +811,8 @@ static Position PlacePill(int width, int height, HashSet<Position> snake, Random
 }
 
 readonly record struct Position(int X, int Y);
+
+static class UiState
+{
+    public static Action? ActiveModalRedraw { get; set; }
+}
