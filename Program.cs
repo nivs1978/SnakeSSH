@@ -165,13 +165,13 @@ static async Task RunUi(List<Connection> connections, string connectionsPath)
                 case ConsoleKey.Delete:
                     if (filteredConnections.Count > 0)
                     {
-                        var shouldErase = false;
+                        var shouldRemove = false;
                         lock (renderLock)
                         {
-                            shouldErase = PromptYesNo("Erase (Y/N)");
+                            shouldRemove = PromptYesNo("Remove connection (Y/N)");
                         }
 
-                        if (shouldErase)
+                        if (shouldRemove)
                         {
                             connections.Remove(filteredConnections[listBox.SelectedIndex]);
                             await SaveConnections(connectionsPath, connections);
@@ -246,7 +246,7 @@ static void DrawMainWindow(IReadOnlyList<Connection> connections, TextBox search
     var borderBg = Theme.ScreenBorderBackground;
     var borderFg = Theme.ScreenBorderForeground;
 
-    var statusText = " F1=NEW  F2=EDIT  ENTER=CONNECT  DEL=ERASE  ESC=QUIT ";
+    var statusText = " F1=New  F2=Edit  ENTER=Connect  DEL=Remove  ESC=Quit ";
     searchBox.SetPosition(left + 2, top + 1);
     listBox.SetPosition(left + 2, top + 3);
 
