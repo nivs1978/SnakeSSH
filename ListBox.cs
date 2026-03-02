@@ -20,7 +20,7 @@ namespace SnakeSSH
         public int SelectedIndex { get; private set; }
         int offset;
 
-        int TextWidth => Math.Max(1, Width - 1);
+        int TextWidthWithScrollbar => Math.Max(1, Width - 1);
 
         public void SetPosition(int left, int top)
         {
@@ -87,12 +87,14 @@ namespace SnakeSSH
 
         public void Draw(IReadOnlyList<Connection> connections)
         {
+            var hasScrollbar = Width > 1 && connections.Count > Height;
+            var textWidth = hasScrollbar ? TextWidthWithScrollbar : Width;
             for (var row = 0; row < Height; row++)
             {
                 var index = row + offset;
                 var text = index < connections.Count ? connections[index].DisplayName : string.Empty;
                 text ??= string.Empty;
-                text = text.Length > TextWidth ? text[..TextWidth] : text.PadRight(TextWidth);
+                text = text.Length > textWidth ? text[..textWidth] : text.PadRight(textWidth);
 
                 var bg = index == SelectedIndex ? Theme.ListSelectedBackground : Theme.ListBackground;
                 var fg = index == SelectedIndex ? Theme.ListSelectedForeground : Theme.ListForeground;
@@ -101,7 +103,10 @@ namespace SnakeSSH
                 Console.ForegroundColor = fg;
                 Console.SetCursorPosition(Left, Top + row);
                 Console.Write(text);
-                DrawScrollbar(row, connections.Count);
+                if (hasScrollbar)
+                {
+                    DrawScrollbar(row, connections.Count);
+                }
             }
         }
 

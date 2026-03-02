@@ -1,12 +1,14 @@
 ﻿using SnakeSSH;
 using System.Diagnostics;
 using System.Linq;
+using System.Text;
 using System.Text.Json;
 using System.Threading;
 
 //Console.OutputEncoding = Encoding.UTF8;
 Console.BackgroundColor = ConsoleColor.Black;
 Console.Clear();
+SetConsoleEncoding();
 
 var connectionsPath = Path.Combine(AppContext.BaseDirectory, "connections.json");
 var connections = await LoadConnections(connectionsPath);
@@ -153,6 +155,7 @@ static async Task RunUi(List<Connection> connections, string connectionsPath)
                         Console.CursorVisible = false;
                         Console.BackgroundColor = ConsoleColor.Black;
                         Console.Clear();
+                        SetConsoleEncoding();
                         DrawMainWindow(filteredConnections, searchBox, listBox, rectWidth, rectHeight);
                     }
 
@@ -197,6 +200,7 @@ static async Task RunUi(List<Connection> connections, string connectionsPath)
                     {
                         Console.BackgroundColor = ConsoleColor.Black;
                         Console.Clear();
+                        SetConsoleEncoding();
                         DrawMainWindow(filteredConnections, searchBox, listBox, rectWidth, rectHeight);
                     }
 
@@ -309,6 +313,12 @@ static void WriteSegment(int width, ConsoleColor bg, ConsoleColor fg, string tex
     Console.BackgroundColor = bg;
     Console.ForegroundColor = fg;
     Console.Write(content);
+}
+
+static void SetConsoleEncoding()
+{
+    Console.OutputEncoding = Encoding.Default;
+    Console.InputEncoding = Encoding.Default;
 }
 
 static async Task EditConnection(Connection? connection, List<Connection> connections, string connectionsPath, bool isNew)
